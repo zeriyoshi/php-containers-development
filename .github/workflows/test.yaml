@@ -64,7 +64,7 @@ jobs:
           ASAN_OPTIONS: exitcode=139
           UBSAN_OPTIONS: print_stacktrace=1
           USE_ZEND_ALLOC: 0
-          USE_TRACKED_ALLOC: 1
+          USE_TRACKED_ALLOC: 0
           TEST_PHP_ARGS: "-j${{ steps.determine_info.outputs.nproc }} \
                           -q \
                           --offline \
