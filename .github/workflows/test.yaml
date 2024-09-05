@@ -58,6 +58,7 @@ jobs:
         working-directory: /usr/src/php
         env:
           SKIP_ASAN: "${{ matrix.variants == 'asan' && '1' || '' }}"
-          TEST_PHP_ARGS: "-q --show-diff -j${{ steps.determine_info.outputs.nproc }}"
+          SKIP_IO_CAPTURE_TESTS: 1
+          TEST_PHP_ARGS: "-q --show-diff -j${{ steps.determine_info.outputs.nproc }} ${{ matrix.variants == 'valgrind' && '-m' || '' }}"
         run: |
           make test

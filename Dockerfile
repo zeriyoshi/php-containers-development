@@ -49,11 +49,5 @@ RUN apt-get update \
  &&   ./buildconf --force \
  &&   CC="${CC}" CXX="${CXX}" CFLAGS="${CFLAGS}" CPPFLAGS="${CPPFLAGS}" LDFLAGS="${LDFLAGS}" ./configure ${CONFIGURE_OPTIONS} --enable-option-checking=fatal \
  &&   make -j"$(nproc)" \
-#  &&  SKIP_IO_CAPTURE_TESTS=1 \
-#      SKIP_ASAN=1 \
-#      SKIP_ONLINE_TESTS=1 \
-#      SKIP_SLOW_TESTS=1 \
-#      TEST_PHP_ARGS="-q --show-diff -j$(nproc)" \
-#       make test \
  &&   make install \
  && cd -
