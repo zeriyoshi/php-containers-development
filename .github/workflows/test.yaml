@@ -1,0 +1,63 @@
+name: Tests
+
+on:
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate branch names
+        id: generate_branch_names
+        run: |
+          echo "value=$(jq -nc \
+            --argjson versions "$(curl -sSL "https://www.php.net/releases/index.php?json" \
+              | jq -c "[..| objects | .supported_versions? // empty] | flatten" \
+            )" \
+            --argjson appendix "[\"master\"]" \
+            '$versions + $appendix' \
+          )" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Generate variants
+        id: generate_variants
+        run: |
+          echo "value=$(grep '\.PHONY:' 'Makefile' | \
+            sed 's/\.PHONY: //' | \
+            tr ' ' '\n' | \
+            grep -vE '^(up|down|all|clean)$' | \
+            jq -Rsc 'split("\n") | map(select(length > 0))' \
+          )" >> $GITHUB_OUTPUT
+    outputs:
+      versions: ${{ steps.generate_branch_names.outputs.value }}
+      variants: ${{ steps.generate_variants.outputs.value }}
+  Tests:
+    needs: ['Prepare']
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        distros: ['bookworm']
+        versions: ${{ fromJson(needs.Prepare.outputs.versions) }}
+        variants: ${{ fromJson(needs.Prepare.outputs.variants) }}
+        ts: ['nts', 'zts']
+    continue-on-error: true
+    container:
+      image: ghcr.io/${{ github.repository }}:amd64-${{ matrix.versions }}-${{ matrix.variants }}-${{ matrix.ts }}-${{ matrix.distros }}
+    steps:
+      - name: Determine informations
+        id: determine_info
+        run: |
+          echo "nproc=$(nproc)" > $GITHUB_OUTPUT
+      - name: Run tests
+        working-directory: /usr/src/php
+        env:
+          SKIP_ASAN: "${{ matrix.variants == 'asan' && '1' || '' }}"
+          TEST_PHP_ARGS: "-q --show-diff -j${{ steps.determine_info.outputs.nproc }}"
+        run: |
+          make test
