@@ -67,7 +67,6 @@ jobs:
           USE_TRACKED_ALLOC: 1
           TEST_PHP_ARGS: "-j${{ steps.determine_info.outputs.nproc }} \
                           -q \
-                          --no-progress \
                           --offline \
                           --show-diff \
                           -g FAIL,BORK,LEAK,XLEAK
