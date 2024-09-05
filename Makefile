@@ -9,16 +9,16 @@ DISTRO ?= unstable
 # Due to Sanitizer builds requiring privileges, use DinD.
 up:
 	docker container run \
-	  --rm \
-	  --platform $(PLATFORM) \
-	  --name php-container-dockerd \
-	  --cap-add SYS_ADMIN \
-	  --security-opt seccomp:unconfined \
-	  --privileged \
-	  --detach \
-	  --publish 2376:2376 \
-	  --volume $(shell pwd)/certs:/certs \
-	  docker:dind
+		--rm \
+		--platform $(PLATFORM) \
+		--name php-container-dockerd \
+		--cap-add SYS_ADMIN \
+		--security-opt seccomp:unconfined \
+		--privileged \
+		--detach \
+		--publish 2376:2376 \
+		--volume $(shell pwd)/certs:/certs \
+		docker:dind
 	sleep $(WAIT_SECS)
 
 down:
@@ -33,27 +33,27 @@ all: gcc debug gcov valgrind clang msan asan ubsan
 define docker_build
 	$(if $(USE_NATIVE_DOCKER),\
 		docker build \
-		  --build-arg PLATFORM="$(PLATFORM)" \
-		  --build-arg DISTRO="${DISTRO}" \
-		  --build-arg PHP_GIT_REF="$(PHP_GIT_REF)" \
-		  --tag php-container:${1}-$(PHP_GIT_REF) \
-		  --tag $(IMAGE_TAG) \
-		  --build-arg CONFIGURE_OPTIONS="$(2)" \
-		  $(3) \
-		  . \
+			--build-arg PLATFORM="$(PLATFORM)" \
+			--build-arg DISTRO="${DISTRO}" \
+			--build-arg PHP_GIT_REF="$(PHP_GIT_REF)" \
+			--tag php-container:${1}-$(PHP_GIT_REF) \
+			--tag $(IMAGE_TAG) \
+			--build-arg CONFIGURE_OPTIONS="$(2)" \
+			$(3) \
+			. \
 		, \
 		DOCKER_HOST=tcp://localhost:2376 \
 		DOCKER_CERT_PATH=$(shell pwd)/certs/client \
 		DOCKER_TLS_VERIFY=1 \
-		  docker build \
-		    --build-arg PLATFORM="$(PLATFORM)" \
+		docker build \
+			--build-arg PLATFORM="$(PLATFORM)" \
 			--build-arg DISTRO="${DISTRO}" \
-		    --build-arg PHP_GIT_REF="$(PHP_GIT_REF)" \
-		    --tag php-container:${1}-$(PHP_GIT_REF) \
-		    --tag $(IMAGE_TAG) \
-		    --build-arg CONFIGURE_OPTIONS="$(2)" \
-		    $(3) \
-		    . && \
+			--build-arg PHP_GIT_REF="$(PHP_GIT_REF)" \
+			--tag php-container:${1}-$(PHP_GIT_REF) \
+			--tag $(IMAGE_TAG) \
+			--build-arg CONFIGURE_OPTIONS="$(2)" \
+			$(3) \
+			. && \
 		(DOCKER_HOST=tcp://localhost:2376 \
 		DOCKER_CERT_PATH=$(shell pwd)/certs/client \
 		DOCKER_TLS_VERIFY=1 \
