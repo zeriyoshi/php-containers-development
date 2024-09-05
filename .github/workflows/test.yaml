@@ -1,7 +1,7 @@
 name: Tests
 
 on:
-  workflow_call:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
