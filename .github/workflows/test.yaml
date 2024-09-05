@@ -76,5 +76,4 @@ jobs:
                           -d opcache.preload_user=root \
                           ${{ matrix.variants == 'valgrind' && '-m' || '' }}"
         run: |
-          echo opcache.preload_user=root >> /etc/php.d/opcache.ini
           make test
