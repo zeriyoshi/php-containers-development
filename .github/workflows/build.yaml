@@ -1,0 +1,105 @@
+name: Build PHP container images
+
+on:
+  push:
+    branches:
+      - main
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate branch names
+        id: generate_branch_names
+        run: |
+          echo "value=$(jq -nc \
+            --argjson versions "$(curl -sSL "https://www.php.net/releases/index.php?json" \
+              | jq -c "[..| objects | .supported_versions? // empty] | flatten" \
+            )" \
+            --argjson appendix "[\"master\"]" \
+            '$versions | map("PHP-" + .) + $appendix' \
+          )" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Generate variants
+        id: generate_variants
+        run: |
+          echo "value=$(grep '\.PHONY:' 'Makefile' | \
+            sed 's/\.PHONY: //' | \
+            tr ' ' '\n' | \
+            grep -vE '^(up|down|all|clean)$' | \
+            jq -Rsc 'split("\n") | map(select(length > 0))' \
+          )" >> $GITHUB_OUTPUT
+    outputs:
+      branches: ${{ steps.generate_branch_names.outputs.value }}
+      variants: ${{ steps.generate_variants.outputs.value }}
+  BuildAndPushImages:
+    needs: ['Prepare']
+    permissions:
+      packages: write
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        distros: ['bookworm']
+        branches: ${{ fromJson(needs.Prepare.outputs.branches) }}
+        variants: ${{ fromJson(needs.Prepare.outputs.variants) }}
+        ts: ['nts', 'zts']
+        platforms: ['linux/amd64', 'linux/arm64/v8', 'linux/s390x']
+        exclude:
+          - platforms: 'linux/s390x'
+          - platforms: 'linux/arm64/v8'
+        include:
+          - distros: 'bookworm'
+            branches: 'PHP-8.3'
+            variants: 'debug'
+            ts: 'nts'
+            platforms: 'linux/s390x'
+          - distros: 'bookworm'
+            branches: 'PHP-8.3'
+            variants: 'msan'
+            ts: 'nts'
+            platforms: 'linux/arm64/v8'
+    continue-on-error: ${{ matrix.platforms != 'linux/amd64' }}
+    steps:
+      - name: Determine tag
+        id: determine_tag
+        run: |
+          echo "tag=ghcr.io/${{ github.repository }}:$(echo "${{ matrix.platforms }}" | sed 's/^linux\///g' | sed 's/\//_/g')-$(echo "${{ matrix.branches }}" | sed 's/^PHP\-//g')-${{ matrix.variants }}-${{ matrix.ts }}-${{ matrix.distros }}" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Setup buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Prepare builder
+        if: matrix.platforms == 'linux/amd64'
+        run: make up
+      - name: Build image
+        env:
+          PLATFORM: ${{ matrix.platforms }}
+          DISTRO: ${{ matrix.distros }}
+          PHP_GIT_REF: ${{ matrix.branches }}
+          CONFIGURE_OPTIONS: ${{ matrix.ts == 'zts' && '--enable-zts' || '' }}
+          IMAGE_TAG: ${{ steps.determine_tag.outputs.tag }}
+          USE_NATIVE_DOCKER: ${{ matrix.platforms == 'linux/amd64' && '' || '1' }}
+        run: make ${{ matrix.variants }}
+      - name: Auth GitHub Packages
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push image
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 30
+          max_attempts: 30
+          retry_on: error
+          command: docker push "${{ steps.determine_tag.outputs.tag }}"
