@@ -45,7 +45,7 @@ jobs:
         distros: ['bookworm']
         # versions: ${{ fromJson(needs.Prepare.outputs.versions) }}
         # variants: ${{ fromJson(needs.Prepare.outputs.variants) }}
-        versions: ['PHP-8.3']
+        versions: ['8.3']
         variants: ['debug', 'msan', 'asan', 'ubsan']
         ts: ['nts', 'zts']
         opcache: [true, false]
