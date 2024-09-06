@@ -29,13 +29,23 @@ ENV CPPFLAGS="${CFLAGS}"
 ENV LDFLAGS="${LDFLAGS}"
 
 RUN apt-get update \
- && apt-get install -y "git" \
- && apt-get install -y ${INSTALL_PACKAGES} \
- && git clone --depth=1 --branch="${PHP_GIT_REF}" "https://github.com/php/php-src.git" "/usr/src/php" \
+ && apt-get install -y "git" "adduser" "sudo" \
+ && adduser --disabled-password --gecos "" "php" \
+ && adduser "php" "sudo" \
+ && echo "php ALL=(ALL) NOPASSWD:ALL" >> "/etc/sudoers" \
+ && mkdir "/usr/src/php" \
+ && chown "php" "/usr/src/php"
+
+RUN apt-get update \
+ && apt-get install -y ${INSTALL_PACKAGES}
+
+USER php
+
+RUN git clone --depth=1 --branch="${PHP_GIT_REF}" "https://github.com/php/php-src.git" "/usr/src/php" \
  && cd "/usr/src/php" \
- &&   apt-get install -y "autoconf" "bison" "re2c" "pkg-config" "libxml2-dev" "libsqlite3-dev" "make" \
+ &&   sudo apt-get install -y "autoconf" "bison" "re2c" "pkg-config" "libxml2-dev" "libsqlite3-dev" "make" \
  &&   ./buildconf --force \
  &&   CC="${CC}" CXX="${CXX}" CFLAGS="${CFLAGS}" CPPFLAGS="${CPPFLAGS}" LDFLAGS="${LDFLAGS}" ./configure ${CONFIGURE_OPTIONS} --enable-option-checking=fatal \
  &&   make -j"$(nproc)" \
- &&   make install \
+ &&   sudo make install \
  && cd -
