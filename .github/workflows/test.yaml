@@ -92,7 +92,7 @@ jobs:
                           --offline \
                           --show-diff \
                           -g FAIL,BORK,LEAK,XLEAK
-                          ${{ matrix.opcache && '-d zend_extension=opcache.so' || '' }} \
+                          ${{ format('-d opcache.enable={0}', (matrix.opcache && '1' || '0')) }} \
                           ${{ matrix.opcache && '-d opcache.enable_cli=1' || '' }} \
                           ${{ (matrix.opcache && matrix.jit != 'disabled') && format('-d opcache.jit={0}', matrix.jit) || '' }} \
                           ${{ matrix.opcache && '-d opcache.protect_memory=1' || '' }} \
