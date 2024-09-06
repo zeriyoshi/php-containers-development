@@ -77,10 +77,6 @@ jobs:
       image: ghcr.io/${{ github.repository }}:amd64-${{ matrix.versions }}-${{ matrix.variants }}-${{ matrix.ts }}-${{ matrix.distros }}
       options: '--privileged --security-opt seccomp:unconfined --cap-add SYS_ADMIN'
     steps:
-      - name: Determine informations
-        id: determine_info
-        run: |
-          echo "nproc=$(nproc)" > $GITHUB_OUTPUT
       - name: Run tests
         working-directory: /usr/src/php
         env:
@@ -90,12 +86,11 @@ jobs:
           SKIP_PERF_SENSITIVE: 1
           ASAN_OPTIONS: ${{ matrix.variants == 'asan' && 'exitcode=139' || '' }}
           UBSAN_OPTIONS: ${{ matrix.variants == 'ubsan' && 'print_stacktrace=1' || '' }}
-          TEST_PHP_ARGS: "-j${{ steps.determine_info.outputs.nproc }} \
-                          -q \
+          TEST_PHP_ARGS: "-q \
                           --offline \
                           --show-diff \
                           --no-progress \
-                          -g FAIL,BORK,LEAK,XLEAK
+                          -g FAIL,BORK,LEAK,XLEAK \
                           ${{ format('-d opcache.enable={0}', (matrix.opcache && '1' || '0')) }} \
                           ${{ matrix.opcache && '-d opcache.enable_cli=1' || '' }} \
                           ${{ (matrix.opcache && matrix.jit != 'disabled') && format('-d opcache.jit={0}', matrix.jit) || '' }} \
@@ -106,4 +101,4 @@ jobs:
                           ${{ matrix.variants == 'msan' && '--msan' || '' }} \
                           "
         run: |
-          make test
+          TEST_PHP_ARGS="${TEST_PHP_ARGS} -j$(/usr/bin/nproc)" make test
