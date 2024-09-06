@@ -87,7 +87,7 @@ jobs:
           STACK_LIMIT_DEFAULTS_CHECK: 1
           ASAN_OPTIONS: ${{ matrix.variants == 'asan' && 'exitcode=139' || '' }}
           UBSAN_OPTIONS: ${{ matrix.variants == 'ubsan' && 'print_stacktrace=1' || '' }}
-          TEST_PHP_ARGS: "-j ${{ steps.determine_info.outputs.nproc }} \
+          TEST_PHP_ARGS: "-j${{ steps.determine_info.outputs.nproc }} \
                           -q \
                           --offline \
                           --show-diff \
