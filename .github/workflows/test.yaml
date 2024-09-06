@@ -74,6 +74,7 @@ jobs:
     continue-on-error: true
     container:
       image: ghcr.io/${{ github.repository }}:amd64-${{ matrix.versions }}-${{ matrix.variants }}-${{ matrix.ts }}-${{ matrix.distros }}
+      options: '--privileged --security-opt seccomp:unconfined --cap-add SYS_ADMIN'
     steps:
       - name: Determine informations
         id: determine_info
