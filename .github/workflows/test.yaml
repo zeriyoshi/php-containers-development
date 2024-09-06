@@ -71,6 +71,7 @@ jobs:
             jit: function
           - variants: ubsan
             jit: tracing
+          - opcache: false
     continue-on-error: true
     container:
       image: ghcr.io/${{ github.repository }}:amd64-${{ matrix.versions }}-${{ matrix.variants }}-${{ matrix.ts }}-${{ matrix.distros }}
