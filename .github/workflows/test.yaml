@@ -43,9 +43,34 @@ jobs:
       max-parallel: 20
       matrix:
         distros: ['bookworm']
-        versions: ${{ fromJson(needs.Prepare.outputs.versions) }}
-        variants: ${{ fromJson(needs.Prepare.outputs.variants) }}
+        # versions: ${{ fromJson(needs.Prepare.outputs.versions) }}
+        # variants: ${{ fromJson(needs.Prepare.outputs.variants) }}
+        versions: ['PHP-8.3']
+        variants: ['debug', 'msan', 'asan', 'ubsan']
         ts: ['nts', 'zts']
+        opcache: [true, false]
+        jit: ['disable', 'function', 'tracing']
+        exclude:
+          - opcache: false
+            jit: function
+          - opcache: false
+            jit: tracing
+          - variants: valgrind
+            jit: function
+          - variants: valgrind
+            jit: tracing
+          - variants: msan
+            jit: function
+          - variants: msan
+            jit: tracing
+          - variants: asan
+            jit: function
+          - variants: asan
+            jit: tracing
+          - variants: ubsan
+            jit: function
+          - variants: ubsan
+            jit: tracing
     continue-on-error: true
     container:
       image: ghcr.io/${{ github.repository }}:amd64-${{ matrix.versions }}-${{ matrix.variants }}-${{ matrix.ts }}-${{ matrix.distros }}
@@ -57,22 +82,24 @@ jobs:
       - name: Run tests
         working-directory: /usr/src/php
         env:
-          SKIP_ASAN: "${{ matrix.variants == 'asan' && '1' || '' }}"
           SKIP_IO_CAPTURE_TESTS: 1
           CI_NO_IPV6: 1
           STACK_LIMIT_DEFAULTS_CHECK: 1
-          ASAN_OPTIONS: exitcode=139
-          UBSAN_OPTIONS: print_stacktrace=1
-          USE_ZEND_ALLOC: 0
-          USE_TRACKED_ALLOC: 0
-          TEST_PHP_ARGS: "-j${{ steps.determine_info.outputs.nproc }} \
+          ASAN_OPTIONS: ${{ matrix.variants == 'asan' && 'exitcode=139' || '' }}
+          UBSAN_OPTIONS: ${{ matrix.variants == 'ubsan' && 'print_stacktrace=1' || '' }}
+          TEST_PHP_ARGS: "-j ${{ steps.determine_info.outputs.nproc }} \
                           -q \
                           --offline \
                           --show-diff \
                           -g FAIL,BORK,LEAK,XLEAK
-                          -d opcache.enable_cli=1 \
-                          -d opcache.protect_memory=1 \
-                          -d opcache.preload_user=root \
-                          ${{ matrix.variants == 'valgrind' && '-m' || '' }}"
+                          ${{ matrix.opcache && '-d zend_extension=opcache.so' || '' }} \
+                          ${{ matrix.opcache && '-d opcache.enable_cli=1' || '' }} \
+                          ${{ (matrix.opcache && matrix.jit != 'disabled') && format('-d opcache.jit={0}', matrix.jit) || '' }} \
+                          ${{ matrix.opcache && '-d opcache.protect_memory=1' || '' }} \
+                          ${{ matrix.opcache && '-d opcache.preload_user=root' || '' }} \
+                          ${{ matrix.variants == 'valgrind' && '-m' || '' }} \
+                          ${{ matrix.variants == 'asan' && '--asan' || '' }} \
+                          ${{ matrix.variants == 'msan' && '--msan' || '' }} \
+                          "
         run: |
           make test
