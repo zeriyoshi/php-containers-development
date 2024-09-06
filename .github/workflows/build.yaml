@@ -44,23 +44,23 @@ jobs:
       fail-fast: false
       max-parallel: 20
       matrix:
-        distros: ['bookworm']
-        branches: ${{ fromJson(needs.Prepare.outputs.branches) }}
-        variants: ${{ fromJson(needs.Prepare.outputs.variants) }}
-        ts: ['nts', 'zts']
-        platforms: ['linux/amd64', 'linux/arm64/v8', 'linux/s390x']
-        exclude:
-          - platforms: 'linux/s390x'
-          - platforms: 'linux/arm64/v8'
+        # distros: ['bookworm']
+        # branches: ${{ fromJson(needs.Prepare.outputs.branches) }}
+        # variants: ${{ fromJson(needs.Prepare.outputs.variants) }}
+        # ts: ['nts', 'zts']
+        # platforms: ['linux/amd64', 'linux/arm64/v8', 'linux/s390x']
+        # exclude:
+        #   - platforms: 'linux/s390x'
+        #   - platforms: 'linux/arm64/v8'
         include:
+          # - distros: 'bookworm'
+          #   branches: 'PHP-8.3'
+          #   variants: 'debug'
+          #   ts: 'nts'
+          #   platforms: 'linux/s390x'
           - distros: 'bookworm'
             branches: 'PHP-8.3'
             variants: 'debug'
-            ts: 'nts'
-            platforms: 'linux/s390x'
-          - distros: 'bookworm'
-            branches: 'PHP-8.3'
-            variants: 'msan'
             ts: 'nts'
             platforms: 'linux/arm64/v8'
     continue-on-error: ${{ matrix.platforms != 'linux/amd64' }}
