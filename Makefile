@@ -4,7 +4,7 @@ IMAGE_TAG ?= php-container-build
 PLATFORM ?= $(shell docker version --format '{{.Server.Os}}/{{.Server.Arch}}')
 WAIT_SECS ?= 30
 USE_NATIVE_DOCKER ?=
-DISTRO ?= unstable
+DISTRO ?= bookworm
 
 # Due to Sanitizer builds requiring privileges, use DinD.
 up:
@@ -68,15 +68,15 @@ gcov:
 	$(call docker_build,$@,--enable-debug --without-pcre-jit --disable-opcache-jit --enable-gcov $(CONFIGURE_OPTIONS),)
 
 valgrind:
-	$(call docker_build,$@,--enable-debug --without-pcre-jit --disable-opcache-jit --with-valgrind $(CONFIGURE_OPTIONS),--build-arg INSTALL_PACKAGES="gcc gdb valgrind")
+	$(call docker_build,$@,--enable-debug --without-pcre-jit --disable-opcache-jit --with-valgrind $(CONFIGURE_OPTIONS),--build-arg INSTALL_PACKAGES="valgrind")
 
 msan:
-	$(call docker_build,$@,--enable-debug --without-pcre-jit --disable-opcache-jit --enable-memory-sanitizer $(CONFIGURE_OPTIONS),--build-arg INSTALL_PACKAGES="clang lldb" --build-arg CC="clang" --build-arg CXX="clang++")
+	$(call docker_build,$@,--enable-debug --without-pcre-jit --disable-opcache-jit --enable-memory-sanitizer --without-sqlite3 --without-pdo-sqlite --without-libxml --disable-dom --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --disable-mysqlnd-compression-support --without-pear --disable-mbregex $(CONFIGURE_OPTIONS),--build-arg USE_CLANG="17")
 
 asan:
-	$(call docker_build,$@,--enable-debug --without-pcre-jit --disable-opcache-jit --enable-address-sanitizer $(CONFIGURE_OPTIONS),--build-arg INSTALL_PACKAGES="clang lldb" --build-arg CC="clang" --build-arg CXX="clang++")
+	$(call docker_build,$@,--enable-debug --without-pcre-jit --disable-opcache-jit --enable-address-sanitizer $(CONFIGURE_OPTIONS),--build-arg USE_CLANG="17")
 
 ubsan:
-	$(call docker_build,$@,--enable-debug --without-pcre-jit --disable-opcache-jit --enable-undefined-sanitizer $(CONFIGURE_OPTIONS),--build-arg INSTALL_PACKAGES="clang lldb" --build-arg CC="clang" --build-arg CXX="clang++")
+	$(call docker_build,$@,--enable-debug --without-pcre-jit --disable-opcache-jit --enable-undefined-sanitizer $(CONFIGURE_OPTIONS),--build-arg USE_CLANG="17")
 
 .PHONY: up down all clean debug gcov valgrind msan asan ubsan
