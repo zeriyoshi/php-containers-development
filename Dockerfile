@@ -76,3 +76,5 @@ RUN git clone --depth=1 --branch="${PHP_GIT_REF}" "https://github.com/php/php-sr
 RUN cd "/usr/src/php" \
  &&   sudo make install || true \
  && cd -
+
+WORKDIR "/usr/src/php"

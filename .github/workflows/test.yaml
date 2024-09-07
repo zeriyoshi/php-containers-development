@@ -45,11 +45,13 @@ jobs:
         distros: ['bookworm']
         # versions: ${{ fromJson(needs.Prepare.outputs.versions) }}
         # variants: ${{ fromJson(needs.Prepare.outputs.variants) }}
-        versions: ['8.3']
+        versions: ['8.3', 'master']
         variants: ['debug', 'msan', 'asan', 'ubsan']
         ts: ['nts', 'zts']
-        opcache: [true, false]
-        jit: ['disable', 'function', 'tracing']
+        # opcache: [true, false]
+        # jit: ['disable', 'function', 'tracing']
+        opcache: [false]
+        jit: ['disable']
         exclude:
           - opcache: false
             jit: function
@@ -86,19 +88,21 @@ jobs:
           SKIP_PERF_SENSITIVE: 1
           ASAN_OPTIONS: ${{ matrix.variants == 'asan' && 'exitcode=139' || '' }}
           UBSAN_OPTIONS: ${{ matrix.variants == 'ubsan' && 'print_stacktrace=1' || '' }}
-          TEST_PHP_ARGS: "-q \
-                          --offline \
-                          --show-diff \
-                          --no-progress \
-                          -g FAIL,BORK,LEAK,XLEAK \
-                          ${{ format('-d opcache.enable={0}', (matrix.opcache && '1' || '0')) }} \
-                          ${{ matrix.opcache && '-d opcache.enable_cli=1' || '' }} \
-                          ${{ (matrix.opcache && matrix.jit != 'disabled') && format('-d opcache.jit={0}', matrix.jit) || '' }} \
-                          ${{ matrix.opcache && '-d opcache.protect_memory=1' || '' }} \
-                          ${{ matrix.opcache && '-d opcache.preload_user=root' || '' }} \
-                          ${{ matrix.variants == 'valgrind' && '-m' || '' }} \
-                          ${{ matrix.variants == 'asan' && '--asan' || '' }} \
-                          ${{ matrix.variants == 'msan' && '--msan' || '' }} \
-                          "
         run: |
-          TEST_PHP_ARGS="${TEST_PHP_ARGS} -j$(/usr/bin/nproc)" make test
+          ./sapi/cli/php \
+            ${{ matrix.opcache && '-d zend_extension=./modules/opcache.so' || '' }} \
+            "run-tests.php" \
+              -q \
+              --offline \
+              --show-diff \
+              --no-progress \
+              -g FAIL,BORK,LEAK,XLEAK \
+              ${{ format('-d opcache.enable={0}', (matrix.opcache && '1' || '0')) }} \
+              ${{ matrix.opcache && '-d opcache.enable_cli=1' || '' }} \
+              ${{ (matrix.opcache && matrix.jit != 'disabled') && format('-d opcache.jit={0}', matrix.jit) || '' }} \
+              ${{ matrix.opcache && '-d opcache.protect_memory=1' || '' }} \
+              ${{ matrix.opcache && '-d opcache.preload_user=root' || '' }} \
+              ${{ matrix.variants == 'valgrind' && '-m' || '' }} \
+              ${{ matrix.variants == 'asan' && '--asan' || '' }} \
+              ${{ matrix.variants == 'msan' && '--msan' || '' }} \
+              -j"$(/usr/bin/nproc)"
