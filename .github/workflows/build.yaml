@@ -44,8 +44,10 @@ jobs:
       fail-fast: false
       max-parallel: 20
       matrix:
-        distros: ['bookworm']
-        branches: ${{ fromJson(needs.Prepare.outputs.branches) }}
+        tags: ['bookworm']
+        uris: ['http://github.com/zeriyoshi/php-src.git']
+        # branches: ${{ fromJson(needs.Prepare.outputs.branches) }}
+        branches: ['msan_test']
         # variants: ${{ fromJson(needs.Prepare.outputs.variants) }}
         variants: ['debug', 'msan', 'asan', 'ubsan']
         ts: ['nts', 'zts']
@@ -55,12 +57,12 @@ jobs:
         #   - platforms: 'linux/s390x'
         #   - platforms: 'linux/arm64/v8'
         # include:
-          # - distros: 'bookworm'
+          # - tags: 'bookworm'
           #   branches: 'PHP-8.3'
           #   variants: 'debug'
           #   ts: 'nts'
           #   platforms: 'linux/s390x'
-          # - distros: 'bookworm'
+          # - tags: 'bookworm'
           #   branches: 'PHP-8.3'
           #   variants: 'debug'
           #   ts: 'nts'
@@ -70,7 +72,7 @@ jobs:
       - name: Determine tag
         id: determine_tag
         run: |
-          echo "tag=ghcr.io/${{ github.repository }}:$(echo "${{ matrix.platforms }}" | sed 's/^linux\///g' | sed 's/\//_/g')-$(echo "${{ matrix.branches }}" | sed 's/^PHP\-//g')-${{ matrix.variants }}-${{ matrix.ts }}-${{ matrix.distros }}" >> $GITHUB_OUTPUT
+          echo "tag=ghcr.io/${{ github.repository }}:$(echo "${{ matrix.platforms }}" | sed 's/^linux\///g' | sed 's/\//_/g')-$(echo "${{ matrix.branches }}" | sed 's/^PHP\-//g')-${{ matrix.variants }}-${{ matrix.ts }}-${{ matrix.tags }}" >> $GITHUB_OUTPUT
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup QEMU
@@ -83,7 +85,8 @@ jobs:
       - name: Build image
         env:
           PLATFORM: ${{ matrix.platforms }}
-          DISTRO: ${{ matrix.distros }}
+          TAG: ${{ matrix.tags }}
+          PHP_GIT_URI: ${{ matrix.uris }}
           PHP_GIT_REF: ${{ matrix.branches }}
           CONFIGURE_OPTIONS: ${{ matrix.ts == 'zts' && '--enable-zts' || '' }}
           IMAGE_TAG: ${{ steps.determine_tag.outputs.tag }}

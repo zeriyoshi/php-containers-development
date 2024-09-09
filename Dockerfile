@@ -1,9 +1,10 @@
 ARG PLATFORM=${BUILDPLATFORM:-linux/amd64}
 
-ARG DISTRO="bookworm"
+ARG TAG="bookworm"
 
-ARG INSTALL_PACKAGES="gcc gdb"
+ARG INSTALL_PACKAGES=""
 
+ARG PHP_GIT_URI="https://github.com/php/php-src.git"
 ARG PHP_GIT_REF="master"
 
 ARG USE_CLANG=""
@@ -13,10 +14,11 @@ ARG CFLAGS="-fPIC -DZEND_TRACK_ARENA_ALLOC"
 ARG LDFLAGS=""
 ARG CONFIGURE_OPTIONS=""
 
-FROM --platform=${PLATFORM} debian:${DISTRO}
+FROM --platform=${PLATFORM} debian:${TAG}
 
 ARG INSTALL_PACKAGES
 
+ARG PHP_GIT_URI
 ARG PHP_GIT_REF
 
 ARG USE_CLANG
@@ -57,7 +59,7 @@ RUN if test "x${INSTALL_PACKAGES}" != "x"; then \
 
 USER php
 
-RUN git clone --depth=1 --branch="${PHP_GIT_REF}" "https://github.com/php/php-src.git" "/usr/src/php" \
+RUN git clone --depth=1 --branch="${PHP_GIT_REF}" "${PHP_GIT_URI}" "/usr/src/php" \
  && if test "x${USE_CLANG}" = "x"; then \
       export CC="gcc" \
  &&   export CXX="g++" \

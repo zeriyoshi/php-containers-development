@@ -1,10 +1,11 @@
+PHP_GIT_URI ?= https://github.com/php/php-src.git
 PHP_GIT_REF ?= master
 CONFIGURE_OPTIONS ?=
 IMAGE_TAG ?= php-container-build
 PLATFORM ?= $(shell docker version --format '{{.Server.Os}}/{{.Server.Arch}}')
 WAIT_SECS ?= 30
 USE_NATIVE_DOCKER ?=
-DISTRO ?= bookworm
+TAG ?= bookworm
 
 # Due to Sanitizer builds requiring privileges, use DinD.
 up:
@@ -34,7 +35,8 @@ define docker_build
 	$(if $(USE_NATIVE_DOCKER),\
 		docker build \
 			--build-arg PLATFORM="$(PLATFORM)" \
-			--build-arg DISTRO="${DISTRO}" \
+			--build-arg TAG="${TAG}" \
+			--build-arg PHP_GIT_URI="$(PHP_GIT_URI)" \
 			--build-arg PHP_GIT_REF="$(PHP_GIT_REF)" \
 			--tag php-container:${1}-$(PHP_GIT_REF) \
 			--tag $(IMAGE_TAG) \
@@ -47,7 +49,8 @@ define docker_build
 		DOCKER_TLS_VERIFY=1 \
 		docker build \
 			--build-arg PLATFORM="$(PLATFORM)" \
-			--build-arg DISTRO="${DISTRO}" \
+			--build-arg TAG="${TAG}" \
+			--build-arg PHP_GIT_URI="$(PHP_GIT_URI)" \
 			--build-arg PHP_GIT_REF="$(PHP_GIT_REF)" \
 			--tag php-container:${1}-$(PHP_GIT_REF) \
 			--tag $(IMAGE_TAG) \

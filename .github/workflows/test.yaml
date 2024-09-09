@@ -42,10 +42,10 @@ jobs:
       fail-fast: false
       max-parallel: 20
       matrix:
-        distros: ['bookworm']
+        tags: ['bookworm']
         # versions: ${{ fromJson(needs.Prepare.outputs.versions) }}
         # variants: ${{ fromJson(needs.Prepare.outputs.variants) }}
-        versions: ['8.3', 'master']
+        versions: ['msan_test']
         variants: ['debug', 'msan', 'asan', 'ubsan']
         ts: ['nts', 'zts']
         # opcache: [true, false]
@@ -75,7 +75,7 @@ jobs:
             jit: tracing
     continue-on-error: true
     container:
-      image: ghcr.io/${{ github.repository }}:amd64-${{ matrix.versions }}-${{ matrix.variants }}-${{ matrix.ts }}-${{ matrix.distros }}
+      image: ghcr.io/${{ github.repository }}:amd64-${{ matrix.versions }}-${{ matrix.variants }}-${{ matrix.ts }}-${{ matrix.tags }}
       options: '--privileged --security-opt seccomp:unconfined --cap-add SYS_ADMIN'
     steps:
       - name: Run tests
